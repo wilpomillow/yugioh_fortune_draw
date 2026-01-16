@@ -37,12 +37,6 @@ function todayKey() {
   return `${yyyy}-${mm}-${dd}`
 }
 
-function hashToPick(s: string, mod: number) {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
-  return h % mod
-}
-
 type Phase = "ready" | "revealing" | "revealed" | "locked"
 
 export default function Page() {
@@ -73,7 +67,7 @@ export default function Page() {
     return DEFAULT_CHARACTER
   }, [phase, chosen.character])
 
-  // ✅ fortuneText now based on draw (always present once revealed/locked)
+  // fortuneText based on result
   const fortuneText = useMemo(() => {
     if (!(phase === "revealed" || phase === "locked")) return ""
     const label = chosen.key.charAt(0).toUpperCase() + chosen.key.slice(1)
@@ -84,7 +78,7 @@ export default function Page() {
   const CARD_ASPECT = "1 / 1.4585987"
   const CARD_WIDTH = "min(340px, 72vw)"
 
-  // Init daily pick / lock
+  // ✅ On load: ONLY lock if already drawn today. Otherwise stay "ready" and do NOT pre-pick.
   useEffect(() => {
     const t = todayKey()
     const last = localStorage.getItem(DAILY_KEY)
@@ -92,16 +86,15 @@ export default function Page() {
     if (last === t) {
       const storedPick = Number(localStorage.getItem(PICK_KEY) ?? "0")
       const p = Number.isFinite(storedPick) ? storedPick : 0
-      setPick(p)
-      setPhase("locked")
-
       const idx = Math.max(0, Math.min(FORTUNES.length - 1, p))
+
+      setPick(idx)
+      setPhase("locked")
       setBubbleText(FORTUNES[idx].dialogue)
       return
     }
 
-    const p = hashToPick(t, 6) // ✅ 6 outcomes
-    setPick(p)
+    // Not drawn today -> ready state
     setPhase("ready")
     setBubbleText("I wonder what today’s fortune will be?")
   }, [])
@@ -184,6 +177,11 @@ export default function Page() {
     if (phase !== "ready") return
     setPhase("revealing")
 
+    // ✅ Random on click, then lock until tomorrow
+    const drawPick = Math.floor(Math.random() * FORTUNES.length)
+    const drawIdx = Math.max(0, Math.min(FORTUNES.length - 1, drawPick))
+    setPick(drawIdx)
+
     const outer = cardOuterRef.current
     const card3d = card3dRef.current
     const front = frontFaceRef.current
@@ -227,9 +225,9 @@ export default function Page() {
     tl.finished.then(() => {
       const t = todayKey()
       localStorage.setItem(DAILY_KEY, t)
-      localStorage.setItem(PICK_KEY, String(pick))
+      localStorage.setItem(PICK_KEY, String(drawIdx))
 
-      setBubbleText(chosen.dialogue)
+      setBubbleText(FORTUNES[drawIdx].dialogue)
       setPhase("revealed")
     })
   }
@@ -333,25 +331,19 @@ export default function Page() {
       <div className="fixed inset-x-0 bottom-0 z-40 pointer-events-none">
         <div className="relative h-[31vh] w-full overflow-hidden">
           <div className="absolute bottom-0 right-6 md:right-10 w-[32vw] max-w-[260px] min-w-[160px]">
-            {/* Speech bubble: left of character, wider */}
-            <div
-  id="bubble-bounce"
-  className="absolute right-0 top-24 -translate-x-full z-[60]"
->
-  <div className="w-[min(520px,75vw)] max-w-[520px]">
-    <SpeechBubble text={bubbleText} />
-  </div>
-</div>
-
-
-
+            {/* Speech bubble: positioned left, but you can adjust className for placement */}
+            <div id="bubble-bounce" className="absolute right-0 top-10 -translate-x-[95%] z-[60]">
+              <div className="w-[min(520px,75vw)] max-w-[520px]">
+                <SpeechBubble text={bubbleText} />
+              </div>
+            </div>
 
             <div className="relative w-full" style={{ aspectRatio: "871 / 917" }}>
               <Image
                 src={characterSrc}
                 alt="Character"
                 fill
-                className="object-contain object-bottom"
+                className="object-contain object-bottom drop-shadow-[0_22px_60px_rgba(0,0,0,0.45)]"
                 priority
               />
             </div>
