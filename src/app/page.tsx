@@ -332,7 +332,7 @@ export default function Page() {
         <div className="relative h-[31vh] w-full overflow-hidden">
           <div className="absolute bottom-0 right-6 md:right-10 w-[32vw] max-w-[260px] min-w-[160px]">
             {/* Speech bubble: positioned left, but you can adjust className for placement */}
-            <div id="bubble-bounce" className="absolute right-0 top-10 -translate-x-[95%] z-[60]">
+            <div id="bubble-bounce" className="absolute right-6 top-24 -translate-x-[95%] z-[60]">
               <div className="w-[min(520px,75vw)] max-w-[520px]">
                 <SpeechBubble text={bubbleText} />
               </div>
