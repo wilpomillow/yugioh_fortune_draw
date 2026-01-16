@@ -343,7 +343,7 @@ export default function Page() {
                 src={characterSrc}
                 alt="Character"
                 fill
-                className="object-contain object-bottom drop-shadow-[0_22px_60px_rgba(0,0,0,0.45)]"
+                className="object-contain object-bottom"
                 priority
               />
             </div>
